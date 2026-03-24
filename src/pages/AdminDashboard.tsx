@@ -1,25 +1,59 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import StatCard from "@/components/StatCard";
-import { adminStats, recentActivity, attendanceTrendData, enrollmentData, usersTableData } from "@/lib/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Plus, Search, Download, Filter } from "lucide-react";
+import { Plus, Search, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { exportToCSV } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/dashboard/admin');
+        if (response.ok) {
+          const result = await response.json();
+          setData(result);
+        } else {
+          toast({ title: "Error", description: "Failed to load dashboard data.", variant: "destructive" });
+        }
+      } catch (err) {
+        toast({ title: "Error", description: "Network error fetching dashboard data.", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [toast]);
+
+  if (loading || !data) {
+    return (
+      <DashboardLayout role="admin">
+        <div className="flex h-[80vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const { adminStats, recentActivity, attendanceTrendData, enrollmentData, usersTableData } = data;
 
   const handleExport = () => {
-    const exportData = usersTableData.map(user => ({
+    const exportData = usersTableData.map((user: any) => ({
       "Name": user.name,
       "Email": user.email,
       "Role": user.role,
@@ -38,7 +72,7 @@ const AdminDashboard = () => {
     navigate("/admin/users");
   };
 
-  const filteredUsers = usersTableData.filter(user =>
+  const filteredUsers = usersTableData.filter((user: any) =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.role.toLowerCase().includes(searchTerm.toLowerCase())
@@ -61,7 +95,7 @@ const AdminDashboard = () => {
 
         {/* Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {adminStats.map((stat, i) => (
+          {adminStats.map((stat: any, i: number) => (
             <StatCard key={i} {...stat} />
           ))}
         </div>
@@ -111,7 +145,7 @@ const AdminDashboard = () => {
               <CardTitle className="text-base">Recent Activity</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {recentActivity.map((item) => (
+              {recentActivity.map((item: any) => (
                 <div key={item.id} className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0">
                   <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${
                     item.type === "success" ? "bg-success" : item.type === "warning" ? "bg-warning" : "bg-info"
@@ -161,7 +195,7 @@ const AdminDashboard = () => {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredUsers.map((user) => (
+                      filteredUsers.map((user: any) => (
                         <TableRow key={user.id}>
                           <TableCell className="font-medium">{user.name}</TableCell>
                           <TableCell className="hidden sm:table-cell text-muted-foreground text-xs">{user.email}</TableCell>

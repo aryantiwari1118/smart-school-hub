@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { login } from "@/lib/api";
+import { login, register } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 const roles = ["Admin", "Teacher", "Student", "Parent"] as const;
@@ -30,6 +30,10 @@ const LoginPage = () => {
   const [emailOrMobile, setEmailOrMobile] = useState("");
   const [password, setPassword] = useState("");
   const [showTestCredentials, setShowTestCredentials] = useState(true);
+  // Registration fields
+  const [name, setName] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +56,65 @@ const LoginPage = () => {
       }
     } catch (err: any) {
       const errorMessage = err.message || "Login failed. Please try again.";
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    // Validation
+    if (!name.trim()) {
+      setError("Name is required");
+      return;
+    }
+    if (!emailOrMobile.trim()) {
+      setError("Email is required");
+      return;
+    }
+    if (!mobile.trim()) {
+      setError("Mobile number is required");
+      return;
+    }
+    if (mobile.length < 10 || mobile.length > 15 || !/^\d+$/.test(mobile)) {
+      setError("Mobile number must be 10-15 digits");
+      return;
+    }
+    if (!password || password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await register(name, emailOrMobile, mobile, password, selectedRole);
+      
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: `Registration successful as ${selectedRole}!`,
+        });
+        
+        setTimeout(() => {
+          const route = `/${selectedRole.toLowerCase()}`;
+          navigate(route);
+        }, 500);
+      }
+    } catch (err: any) {
+      const errorMessage = err.message || "Registration failed. Please try again.";
       setError(errorMessage);
       toast({
         title: "Error",
@@ -162,26 +225,48 @@ const LoginPage = () => {
               </div>
             )}
 
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={isRegister ? handleRegister : handleLogin} className="space-y-4">
               {isRegister && (
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" placeholder="Enter your full name" disabled={isLoading} />
+                  <Input 
+                    id="name" 
+                    placeholder="Enter your full name" 
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    disabled={isLoading}
+                    required
+                  />
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email or Mobile</Label>
+                <Label htmlFor="email">{isRegister ? "Email" : "Email or Mobile"}</Label>
                 <Input
                   id="email"
                   type="text"
-                  placeholder="Enter email or mobile number"
+                  placeholder={isRegister ? "Enter your email" : "Enter email or mobile number"}
                   value={emailOrMobile}
                   onChange={(e) => setEmailOrMobile(e.target.value)}
                   disabled={isLoading}
                   required
                 />
               </div>
+
+              {isRegister && (
+                <div className="space-y-2">
+                  <Label htmlFor="mobile">Mobile Number</Label>
+                  <Input
+                    id="mobile"
+                    type="tel"
+                    placeholder="Enter 10-15 digit mobile number"
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+              )}
 
               <div className="space-y-2">
                 <div className="flex justify-between">
@@ -216,12 +301,20 @@ const LoginPage = () => {
               {isRegister && (
                 <div className="space-y-2">
                   <Label htmlFor="confirm">Confirm Password</Label>
-                  <Input id="confirm" type="password" placeholder="Confirm your password" disabled={isLoading} />
+                  <Input 
+                    id="confirm" 
+                    type="password" 
+                    placeholder="Confirm your password" 
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={isLoading}
+                    required
+                  />
                 </div>
               )}
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing in..." : `Sign In as ${selectedRole}`}
+                {isLoading ? (isRegister ? "Creating account..." : "Signing in...") : (isRegister ? `Register as ${selectedRole}` : `Sign In as ${selectedRole}`)}
               </Button>
             </form>
 
@@ -233,6 +326,11 @@ const LoginPage = () => {
                 onClick={() => {
                   setIsRegister(!isRegister);
                   setError("");
+                  setEmailOrMobile("");
+                  setPassword("");
+                  setConfirmPassword("");
+                  setName("");
+                  setMobile("");
                 }}
                 disabled={isLoading}
               >

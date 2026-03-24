@@ -1,21 +1,15 @@
 import DashboardLayout from "@/components/DashboardLayout";
-import { studentAttendance, subjectProgress, studentTimeline } from "@/lib/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import { FileText, Award, Clock, AlertTriangle, Download } from "lucide-react";
+import { FileText, Award, Clock, AlertTriangle, Download, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { exportToCSV } from "@/lib/utils";
+import { useState, useEffect } from "react";
 
-const donutData = [
-  { name: "Present", value: studentAttendance.present, color: "hsl(var(--success))" },
-  { name: "Absent", value: studentAttendance.absent, color: "hsl(var(--destructive))" },
-  { name: "Late", value: studentAttendance.late, color: "hsl(var(--warning))" },
-];
-
-const timelineIcon = {
+const timelineIcon: Record<string, any> = {
   submission: <FileText className="h-4 w-4 text-primary" />,
   grade: <Award className="h-4 w-4 text-success" />,
   deadline: <Clock className="h-4 w-4 text-warning" />,
@@ -24,6 +18,45 @@ const timelineIcon = {
 
 const StudentDashboard = () => {
   const { toast } = useToast();
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/dashboard/student');
+        if (response.ok) {
+          const result = await response.json();
+          setData(result);
+        } else {
+          toast({ title: "Error", description: "Failed to load dashboard data.", variant: "destructive" });
+        }
+      } catch (err) {
+        toast({ title: "Error", description: "Network error fetching dashboard data.", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [toast]);
+
+  if (loading || !data) {
+    return (
+      <DashboardLayout role="student">
+        <div className="flex h-[80vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const { studentAttendance, subjectProgress, studentTimeline } = data;
+
+  const donutData = [
+    { name: "Present", value: studentAttendance.present, color: "hsl(var(--success))" },
+    { name: "Absent", value: studentAttendance.absent, color: "hsl(var(--destructive))" },
+    { name: "Late", value: studentAttendance.late, color: "hsl(var(--warning))" },
+  ];
 
   const handleExport = () => {
     const exportData = [
@@ -34,7 +67,7 @@ const StudentDashboard = () => {
         "Absent": studentAttendance.absent,
         "Late": studentAttendance.late,
       },
-      ...subjectProgress.map(s => ({
+      ...subjectProgress.map((s: any) => ({
         "Metric": s.subject,
         "Value": `${s.progress}%`,
         "Grade": s.grade,
@@ -54,7 +87,7 @@ const StudentDashboard = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Student Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Welcome back, Priya Sharma · Class 10-A</p>
+            <p className="text-sm text-muted-foreground">Welcome back, Alex Student · Class 10-A</p>
           </div>
           <Button size="sm" variant="outline" onClick={handleExport} className="gap-1">
             <Download className="h-4 w-4" /> Export
@@ -107,7 +140,7 @@ const StudentDashboard = () => {
               <CardTitle className="text-base">Subject-wise Progress</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {subjectProgress.map((sub) => (
+              {subjectProgress.map((sub: any) => (
                 <div key={sub.subject} className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">{sub.subject}</span>
@@ -130,7 +163,7 @@ const StudentDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {studentTimeline.map((item) => (
+              {studentTimeline.map((item: any) => (
                 <div key={item.id} className="flex gap-3 pb-4 border-b last:border-0 last:pb-0">
                   <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-muted shrink-0">
                     {timelineIcon[item.type]}

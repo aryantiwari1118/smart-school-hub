@@ -1,0 +1,186 @@
+### 🧪 Registration & Authentication API Tests
+
+### 1. Register New User
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Jane Smith",
+  "email": "jane.smith@example.com",
+  "mobile": "9876543220",
+  "password": "JanePass123",
+  "role": "Student"
+}
+
+###
+
+### 2. Check Email Availability (Before Registration)
+GET http://localhost:5000/api/auth/check-email/jane.smith@example.com
+
+###
+
+### 3. Check Mobile Availability (Before Registration)
+GET http://localhost:5000/api/auth/check-mobile/9876543220
+
+###
+
+### 4. Register Another User (Teacher)
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Robert Johnson",
+  "email": "robert.johnson@example.com",
+  "mobile": "9876543223",
+  "password": "RobertPass456",
+  "role": "Teacher"
+}
+
+###
+
+### 5. Login User (Legacy Endpoint)
+POST http://localhost:5000/api/login
+Content-Type: application/json
+
+{
+  "emailOrMobile": "jane.smith@example.com",
+  "password": "JanePass123",
+  "role": "Student"
+}
+
+###
+
+### 6. Get Current User Profile (Protected)
+@token = 
+GET http://localhost:5000/api/auth/profile
+Authorization: Bearer @token
+
+###
+
+### 7. Update User Profile
+@token = 
+PUT http://localhost:5000/api/auth/profile
+Authorization: Bearer @token
+Content-Type: application/json
+
+{
+  "name": "Jane Smith Updated",
+  "mobile": "9876543225"
+}
+
+###
+
+### 8. Change Password
+@token = 
+POST http://localhost:5000/api/auth/change-password
+Authorization: Bearer @token
+Content-Type: application/json
+
+{
+  "currentPassword": "JanePass123",
+  "newPassword": "JaneNewPass789"
+}
+
+###
+
+### 9. Login with Admin Account (Test Credential)
+POST http://localhost:5000/api/login
+Content-Type: application/json
+
+{
+  "emailOrMobile": "admin@smartedu.com",
+  "password": "admin123",
+  "role": "Admin"
+}
+
+###
+
+### 10. Get All Users (Admin Only)
+@admin_token = 
+GET http://localhost:5000/api/auth/users
+Authorization: Bearer @admin_token
+
+###
+
+### 11. Get All Students (Admin - With Filter)
+@admin_token = 
+GET http://localhost:5000/api/auth/users?role=Student&status=active
+Authorization: Bearer @admin_token
+
+###
+
+### 12. Get Specific User by ID
+@admin_token = 
+GET http://localhost:5000/api/auth/users/507f1f77bcf86cd799439011
+Authorization: Bearer @admin_token
+
+###
+
+### 13. Update User as Admin
+@admin_token = 
+PUT http://localhost:5000/api/auth/users/507f1f77bcf86cd799439011
+Authorization: Bearer @admin_token
+Content-Type: application/json
+
+{
+  "name": "Updated Name",
+  "role": "Teacher",
+  "isActive": true
+}
+
+###
+
+### 14. Deactivate User (Admin)
+@admin_token = 
+POST http://localhost:5000/api/auth/users/507f1f77bcf86cd799439011/deactivate
+Authorization: Bearer @admin_token
+
+###
+
+### 15. Activate User (Admin)
+@admin_token = 
+POST http://localhost:5000/api/auth/users/507f1f77bcf86cd799439011/activate
+Authorization: Bearer @admin_token
+
+###
+
+### 16. Delete User (Admin)
+@admin_token = 
+DELETE http://localhost:5000/api/auth/users/507f1f77bcf86cd799439011
+Authorization: Bearer @admin_token
+
+###
+
+### 17. Verify Token
+POST http://localhost:5000/api/verify-token
+Content-Type: application/json
+
+{
+  "token": "your-jwt-token-here"
+}
+
+###
+
+### 18. Health Check
+GET http://localhost:5000/api/health
+
+###
+
+### 19. Get Test Credentials (Dev Only)
+GET http://localhost:5000/api/test-credentials
+
+###
+
+### 📝 INSTRUCTIONS FOR USE:
+###
+### 1. Install VS Code Extension: "REST Client" (humao.rest-client)
+### 2. Open this file in VS Code
+### 3. Click "Send Request" link above each request to test
+### 4. Use @token, @admin_token variables to store token responses
+### 5. Replace placeholder IDs with actual user IDs from responses
+###
+### For Postman:
+### 1. Copy each request manually or
+### 2. Import as Raw collection
+### 3. Set variables for {{token}} and {{admin_token}}
+
